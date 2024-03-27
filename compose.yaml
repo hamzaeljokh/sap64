@@ -1,21 +1,55 @@
-version: '3'
-
 services:
-###> doctrine/doctrine-bundle ###
-  database:
-    image: postgres:${POSTGRES_VERSION:-16}-alpine
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-app}
-      # You should definitely change the password in production
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-!ChangeMe!}
-      POSTGRES_USER: ${POSTGRES_USER:-app}
+  sap:
+    build: .
+    entrypoint: symfony serve
+    ports:
+      - 8000:8000
     volumes:
-      - database_data:/var/lib/postgresql/data:rw
-      # You may use a bind-mounted host directory instead, so that it is harder to accidentally remove the volume and lose all your data!
-      # - ./docker/db/data:/var/lib/postgresql/data:rw
-###< doctrine/doctrine-bundle ###
+      - .:/sap_rd
+    depends_on:
+      - database
+    networks:
+      back-end:
+        # ipv4_address: 172.16.0.2
+  database:
+    image: postgres:16-alpine
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_DB: sap64
+      # You should definitely change the password in production
+      POSTGRES_PASSWORD: hell
+      POSTGRES_USER: hell
+    volumes:
+      - sap64_data:/var/lib/postgresql/data:rw
+    networks:
+      back-end:
+        ipv4_address: 172.16.0.3
+  pgadmin:
+    image: dpage/pgadmin4:8.4
+    ports:
+      - 8080:80
+    environment:
+      PGADMIN_DEFAULT_EMAIL: hell@gmail.com
+      PGADMIN_DEFAULT_PASSWORD : hell
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin:rw
+    depends_on:
+      - database
+    networks:
+      back-end:
+        # ipv4_address: 172.16.0.4
 
 volumes:
-###> doctrine/doctrine-bundle ###
-  database_data:
-###< doctrine/doctrine-bundle ###
+  sap64_data:
+  pgadmin_data:
+
+networks:
+   back-end:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.0.0/24
+
+# apt install postgresql-client
+# psql postgresql://hell:hell@172.29.0.3:5432/sap64
